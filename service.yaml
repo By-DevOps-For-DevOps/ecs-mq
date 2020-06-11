@@ -39,7 +39,7 @@ Resources:
       Family: APP_NAME-BUILD_SCOPE
       Cpu: ECS_CPU_COUNT
       Memory: ECS_MEMORY_RESERVATION_COUNT
-      NetworkMode: awsvpc
+      NetworkMode: none
       RequiresCompatibilities:
         - FARGATE
       ExecutionRoleArn:
