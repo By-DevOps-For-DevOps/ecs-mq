@@ -110,9 +110,6 @@ ENVIRONMENT_VARIABLES
   # as monitor the number of running tasks and replace any that have crashed
   Service:
     Type: AWS::ECS::Service
-    # TODO: Maybe it is not required
-    DependsOn:
-      - ECSServicePolicy
     Properties:
       Cluster:
         Fn::ImportValue: !Sub '${EnvironmentName}-ECSCluster'
