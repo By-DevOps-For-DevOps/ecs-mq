@@ -39,7 +39,7 @@ Resources:
       Family: APP_NAME-BUILD_SCOPE
       Cpu: ECS_CPU_COUNT
       Memory: ECS_MEMORY_RESERVATION_COUNT
-      NetworkMode: none
+      NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
       ExecutionRoleArn:
@@ -93,6 +93,13 @@ ENVIRONMENT_VARIABLES
       LaunchType: FARGATE
       DesiredCount: DESIRED_COUNT
       TaskDefinition: !Ref 'TaskDefinition'
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue: !Sub '${EnvironmentName}-ECSHostSecurityGroup'
+          Subnets:
+            - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet1'
+            - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet2'
 
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
     Type: 'AWS::IAM::Role'
