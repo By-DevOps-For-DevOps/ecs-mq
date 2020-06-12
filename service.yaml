@@ -24,54 +24,83 @@ Parameters:
     Type: String
     Description: Email address to notify when an API activity has triggered an alarm
     Default: EMAIL
-  ECSRespositoryName:
+  ECSRepositoryName:
     Type: String
     Description: 'ECS Repository Name'
     Default: ECS_REPOSITORY_NAME
 
 Resources:
+  # The task definition. This is a simple metadata description of what
+  # container to run, and what resource requirements it has.
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       #The Family name will be used along with ECS_CLUSTER_NAME to prepare the stack name. It should be of Format abb-cdd-sd
       Family: APP_NAME-BUILD_SCOPE
+      Cpu: ECS_CPU_COUNT
+      Memory: ECS_MEMORY_RESERVATION_COUNT
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub '${EnvironmentName}-ECSTaskExecutionRoleArn'
+      # TODO: too much power for the task
+      TaskRoleArn:
+        Fn::ImportValue: !Sub '${EnvironmentName}-ECSTaskExecutionRoleArn'
       ContainerDefinitions:
-      - Name: APP_NAME
-        Cpu: ECS_CPU_COUNT
-        Essential: 'true'
-        Image:
-          "Fn::Sub":
-            - '${AccountId}.dkr.ecr.${Region}.amazonaws.com/${ECSRespositoryName}:TAG'
-            - { AccountId: { "Ref" : "AWS::AccountId" }, Region: { "Ref" : "AWS::Region" }}
-        MemoryReservation: ECS_MEMORY_RESERVATION_COUNT
+      - Name: xray-sidecar
+        # TODO: it is expected that you have xray-daemon in your ECR
+        Image: "amazon/aws-xray-daemon:3.2.0"
         LogConfiguration:
           LogDriver: awslogs
           Options:
-            awslogs-group:
-              Ref: ContainerLogGroup
-            awslogs-region:
-              Ref: AWS::Region
-        ENVIRONMENT_VARIABLES
+            awslogs-group: !Ref 'ContainerLogGroup'
+            awslogs-region: !Ref 'AWS::Region'
+            awslogs-stream-prefix: !Sub "${EnvironmentName}-APP_NAME"
+      - Name: APP_NAME
+        Essential: 'true'
+        Image:
+          "Fn::Sub":
+            - '${AccountId}.dkr.ecr.${Region}.amazonaws.com/${ECSRepositoryName}:TAG'
+            - { AccountId: { "Ref" : "AWS::AccountId" }, Region: { "Ref" : "AWS::Region" }}
+        Ulimits:
+          - Name: nofile
+            SoftLimit: 2048
+            HardLimit: 8192
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref 'ContainerLogGroup'
+            awslogs-region: !Ref 'AWS::Region'
+            awslogs-stream-prefix: !Sub "${EnvironmentName}-APP_NAME"
+        Environment:
+ENVIRONMENT_VARIABLES
+
   ContainerLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "${EnvironmentName}-APP_NAME"
       RetentionInDays: 14
-  CloudwatchLogsGroup:
-    Type: AWS::Logs::LogGroup
-    Properties:
-      LogGroupName:
-        Fn::Sub: "ECSLogGroup-${AWS::StackName}"
-      RetentionInDays: 14
+
+  # The service. The service is a resource which allows you to run multiple
+  # copies of a type of task, and gather up their logs and metrics, as well
+  # as monitor the number of running tasks and replace any that have crashed
   Service:
     Type: AWS::ECS::Service
     Properties:
       Cluster:
-        Fn::ImportValue:
-          Fn::Sub: "${EnvironmentName}-ECSCluster"
+        Fn::ImportValue: !Sub '${EnvironmentName}-ECSCluster'
+      LaunchType: FARGATE
       DesiredCount: DESIRED_COUNT
-      TaskDefinition:
-        Ref: TaskDefinition
+      TaskDefinition: !Ref 'TaskDefinition'
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - Fn::ImportValue: !Sub '${EnvironmentName}-ECSHostSecurityGroup'
+          Subnets:
+            - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet1'
+            - Fn::ImportValue: !Sub '${EnvironmentName}-PrivateSubnet2'
+
   ScalableTargetRole: # based on http://docs.aws.amazon.com/AmazonECS/latest/developerguide/autoscale_IAM_role.html
     Type: 'AWS::IAM::Role'
     Properties:

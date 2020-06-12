@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -ex
+
 APP_NAME=`echo ${GITHUB_REPO} | sed 's/_/-/g'`
 APP_NAME=`echo ${APP_NAME} | sed 's/-//g'`
 APP_NAME=`echo ${APP_NAME} | cut -c1-15`
@@ -71,5 +73,5 @@ if [ "$DEPLOY_ENVIRONMENT" != "release" ] ; then
   . ecs/params.sh
   perl -i -pe 's/ENVIRONMENT_VARIABLES/`cat env.yaml`/e' ecs/service.yaml
   # Remove the env yaml
-  rm env.yaml
+  rm env.yaml | true
 fi
