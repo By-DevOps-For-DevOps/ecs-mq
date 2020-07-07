@@ -36,9 +36,9 @@ elif [ "$DEPLOY_ENVIRONMENT" = "release" ] ; then
     "name": "%s - (Release Notes)","body": "%s",
     "draft": false,"prerelease": false}' $RELEASE_PLAN $RELEASE_PLAN "$(cat commits)")
     echo $API_JSON
-    API_URI="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases?access_token=${GITHUB_TOKEN}"
+    API_URI="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases"
     echo $API_URI
-    RELEASE_STATUS=$(curl --write-out %{http_code} --silent --output /dev/null --data "$API_JSON" "$API_URI")
+    RELEASE_STATUS=$(curl -H 'Authorization: token '${GITHUB_TOKEN}'' --write-out %{http_code} --silent --output /dev/null --data "$API_JSON" "$API_URI")
     if [ $RELEASE_STATUS != 201 ]; then
         echo "Release Failed with status:${RELEASE_STATUS}"
         exit 1;
@@ -51,7 +51,7 @@ else
     cd ${GITHUB_REPO}
     git checkout staging
     STAGE_TAG=$(git describe --tags --abbrev=0 --match "*candidate*")
-    TAG=$(curl https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest?access_token=${GITHUB_TOKEN} | grep tag_name | grep -Eo "([0-9]\.*)+")
+    TAG=$(curl -H 'Authorization: token '${GITHUB_TOKEN}'' https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/latest | grep tag_name | grep -Eo "([0-9]\.*)+")
     echo $STAGE_TAG > ../stage.tag
     echo $TAG > ../prod.tag
     cat ../stage.tag
