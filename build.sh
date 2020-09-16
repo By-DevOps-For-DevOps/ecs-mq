@@ -6,7 +6,9 @@ APP_NAME=`echo ${GITHUB_REPO} | sed 's/_/-/g'`
 APP_NAME=`echo ${APP_NAME} | sed 's/-//g'`
 APP_NAME=`echo ${APP_NAME} | cut -c1-15`
 
-echo -n "$CODEBUILD_BUILD_ID" | sed "s/.*:\([[:xdigit:]]\{7\}\).*/\1/" > build.id
+# prints Epoch time e.g. 1595330840
+date +%s > build.id
+
 if [ "$DEPLOY_ENVIRONMENT" = "development" ] || \
    [ "$DEPLOY_ENVIRONMENT" = "feature" ] || \
    [ "$DEPLOY_ENVIRONMENT" = "hotfix" ]; then
