@@ -17,7 +17,7 @@ Parameters:
   ServiceMinCapacity:
     Description: 'The minimum number of simultaneous tasks, that you want to run on the cluster.'
     Type: Number
-    Default: 2
+    Default: DESIRED_COUNT
     ConstraintDescription: 'Must be >= 1'
     MinValue: 1
   Email:
@@ -35,7 +35,8 @@ Resources:
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      #The Family name will be used along with ECS_CLUSTER_NAME to prepare the stack name. It should be of Format abb-cdd-sd
+      # The Family name will be used along with ECS_CLUSTER_NAME to prepare the stack name.
+      # It should be of Format abb-cdd-sd
       Family: APP_NAME-BUILD_SCOPE
       Cpu: ECS_CPU_COUNT
       Memory: ECS_MEMORY_RESERVATION_COUNT
@@ -59,10 +60,7 @@ Resources:
             awslogs-stream-prefix: !Sub "${EnvironmentName}-APP_NAME"
       - Name: APP_NAME
         Essential: 'true'
-        Image:
-          "Fn::Sub":
-            - '${AccountId}.dkr.ecr.${Region}.amazonaws.com/${ECSRepositoryName}:TAG'
-            - { AccountId: { "Ref" : "AWS::AccountId" }, Region: { "Ref" : "AWS::Region" }}
+        Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECSRepositoryName}:TAG'
         Ulimits:
           - Name: nofile
             SoftLimit: 2048
