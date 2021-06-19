@@ -50,15 +50,15 @@ elif [ "$DEPLOY_ENVIRONMENT" = "release" ] ; then
     # Delete released branch (e.g. 2.0.4) and let a candidate (e.g. 2.0.4-candidate-f3056cc) to be promoted
     # This case is only to support multiple pipelines
     # Get a release by tag name (https://docs.github.com/en/rest/reference/repos#get-a-release-by-tag-nametags)
-    API_URI="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/tags/${RELEASE_PLAN}?access_token=${GITHUB_TOKEN}"
-    RELEASE_STATUS=$(curl --write-out %{http_code} --silent --output get_release_by_tag.txt "$API_URI")
+    API_URI="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/tags/${RELEASE_PLAN}"
+    RELEASE_STATUS=$(curl -H 'Authorization: token '${GITHUB_TOKEN}'' --write-out %{http_code} --silent --output get_release_by_tag.txt "$API_URI")
     if [ "${RELEASE_STATUS}" -eq 200 ]; then
 
         # Delete a release (https://docs.github.com/en/rest/reference/repos#delete-a-release)
         echo "Release found with status:${RELEASE_STATUS}. Deleting the release."
         RELEASE_ID=$(cat get_release_by_tag.txt | jq -r '.id')
-        API_URI="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/${RELEASE_ID}?access_token=${GITHUB_TOKEN}"
-        RELEASE_STATUS=$(curl --request DELETE --write-out %{http_code} --silent --output /dev/null "$API_URI")
+        API_URI="https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/${RELEASE_ID}"
+        RELEASE_STATUS=$(curl -H 'Authorization: token '${GITHUB_TOKEN}'' --request DELETE --write-out %{http_code} --silent --output /dev/null "$API_URI")
         if [ "${RELEASE_STATUS}" -ne 204 ]; then
             echo "Failed to delete a release with status:${RELEASE_STATUS}."
             exit 1;
