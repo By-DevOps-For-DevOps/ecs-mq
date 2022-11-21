@@ -49,15 +49,6 @@ Resources:
       TaskRoleArn:
         Fn::ImportValue: !Sub '${EnvironmentName}-ECSTaskExecutionRoleArn'
       ContainerDefinitions:
-      - Name: xray-sidecar
-        # TODO: it is expected that you have xray-daemon in your ECR
-        Image: "amazon/aws-xray-daemon:3.2.0"
-        LogConfiguration:
-          LogDriver: awslogs
-          Options:
-            awslogs-group: !Ref 'ContainerLogGroup'
-            awslogs-region: !Ref 'AWS::Region'
-            awslogs-stream-prefix: !Sub "${EnvironmentName}-APP_NAME"
       - Name: APP_NAME
         Essential: 'true'
         Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECSRepositoryName}:TAG'
